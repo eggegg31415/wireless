@@ -25,7 +25,7 @@ n=n*sqrt(Pn);
 mod_order_list = [1,2,4];
 for mod_order=mod_order_list
     x(mod_order, :) = modulation(mod_order, tx_data);
-    
+
     for d=1:length(dist)
         y(mod_order,d,:)=sqrt(Pr(d))*x(mod_order,:)+n;
     end
@@ -36,7 +36,7 @@ end
 % Error if input and output are of different signs
 for mod_order=mod_order_list
     figure('units','normalized','outerposition',[0 0 1 1])
-    sgtitle(sprintf('Modulation order: %d', mod_order)); 
+    sgtitle(sprintf('Modulation order: %d', mod_order));
     len = Bit_Length/mod_order;
     for d=1:length(dist)
         s = reshape((y(mod_order, d, :)./sqrt(Pr(d))), [1, Bit_Length]);
@@ -46,11 +46,11 @@ for mod_order=mod_order_list
             if tx_predict(i) ~= tx_data(i) err = err+1;, end;
         end
         noise = s - x(mod_order, :);
-        
+
         BER_simulated(mod_order, d)=err/Bit_Length;
         SNR_simulated(mod_order, d) = 1/mean(abs(noise(1:len).^2));
         SNRdB_simulated(mod_order, d) = 10*log10(SNR_simulated(mod_order, d));
-        
+
         subplot(2, 2, d)
         hold on;
         plot(s(1:length(s)/mod_order),'bx');
@@ -80,7 +80,7 @@ title('SNR');
 xlabel('Distance [m]');
 ylabel('SNR [dB]');
 legend('BPSK','QPSK','16QAM');
-axis tight 
+axis tight
 grid
 saveas(gcf,'SNR.jpg','jpg')
 
@@ -94,7 +94,7 @@ title('BER');
 xlabel('Distance [m]');
 ylabel('BER');
 legend('BPSK','QPSK','16QAM');
-axis tight 
+axis tight
 grid
 saveas(gcf,'BER.jpg','jpg')
 return;
@@ -111,16 +111,11 @@ function mod = modulation(mod_order, data)
         %% QPSK: {11,10,01,00} -> {1+i, -1+i, -1-i, 1-i} * scaling factor
         cnt = 1;
         scale = 1/sqrt(2);
+        QPSKBit = [1 1; 1 0; 0 1; 0 0];
+        QPSK = [1+j, -1+j, -1-j, 1-j];
         for i = 1 : len
-            if data(cnt) == 1 && data(cnt+1) == 1
-                mod(i) = 1+j;
-            elseif data(cnt) == 1 && data(cnt+1) == 0
-                mod(i) = -1+j;
-            elseif data(cnt) == 0 && data(cnt+1) == 1
-                mod(i) = -1-j;
-            elseif data(cnt) == 0 && data(cnt+1) == 0
-                mod(i) = 1-j;
-            end
+            pos = ismember(QPSKBit, data(cnt:cnt+1), "rows");
+            mod(i) = QPSK(find(pos));
             cnt = cnt + 2;
         end
         mod = mod*scale;
@@ -129,46 +124,22 @@ function mod = modulation(mod_order, data)
         %% -> {3a+3ai, 3a+ai, a+3ai, a+ai, -a+3ai, -3a+3ai, -3a+ai, -a+ai, 3a-ai, 3a-3ai, a-ai, a-3i, -a-ai, -a-3ai, -3a-ai, -3a-3ai}
         cnt=1;
         scale = sqrt(4/39);
+        QAMBit = [1 1 1 1; 1 1 1 0; 1 1 0 1; 1 1 0 0; 
+                1 0 1 1; 1 0 1 0; 1 0 0 1; 1 0 0 0; 
+                0 1 1 1; 0 1 1 0; 0 1 0 1; 0 1 0 0; 
+                0 0 1 1; 0 0 1 0; 0 0 0 1; 0 0 0 0];
+        QAM = [3+3j, 3+j, 1+3j, 1+1j, ...,
+            -1+3j, -3+3j, -3+j, -1+j, ...,
+            3-j, 3-3j, 1-j, 1-3j, ...,
+            -1-j, -1-3j, -3-j, -3-3j];
         for i = 1 : len
-            if data(cnt) == 1 && data(cnt+1) == 1 && data(cnt+2) == 1 && data(cnt+3) == 1
-                mod(i) = 3+3j;
-            elseif data(cnt) == 1 && data(cnt+1) == 1 && data(cnt+2) == 1 && data(cnt+3) == 0
-                mod(i) = 3+j;
-            elseif data(cnt) == 1 && data(cnt+1) == 1 && data(cnt+2) == 0 && data(cnt+3) == 1
-                mod(i) = 1+3j;
-            elseif data(cnt) == 1 && data(cnt+1) == 1 && data(cnt+2) == 0 && data(cnt+3) == 0
-                mod(i) = 1+1j;
-            elseif data(cnt) == 1 && data(cnt+1) == 0 && data(cnt+2) == 1 && data(cnt+3) == 1
-                mod(i) = -1+3j;
-            elseif data(cnt) == 1 && data(cnt+1) == 0 && data(cnt+2) == 1 && data(cnt+3) == 0
-                mod(i) = -3+3j;
-            elseif data(cnt) == 1 && data(cnt+1) == 0 && data(cnt+2) == 0 && data(cnt+3) == 1
-                mod(i) = -3+j;
-            elseif data(cnt) == 1 && data(cnt+1) == 0 && data(cnt+2) == 0 && data(cnt+3) == 0
-                mod(i) = -1+j;
-            elseif data(cnt) == 0 && data(cnt+1) == 1 && data(cnt+2) == 1 && data(cnt+3) == 1
-                mod(i) = 3-j;
-            elseif data(cnt) == 0 && data(cnt+1) == 1 && data(cnt+2) == 1 && data(cnt+3) == 0
-                mod(i) = 3-3j;
-            elseif data(cnt) == 0 && data(cnt+1) == 1 && data(cnt+2) == 0 && data(cnt+3) == 1
-                mod(i) = 1-j;
-            elseif data(cnt) == 0 && data(cnt+1) == 1 && data(cnt+2) == 0 && data(cnt+3) == 0
-                mod(i) = 1-3j;
-            elseif data(cnt) == 0 && data(cnt+1) == 0 && data(cnt+2) == 1 && data(cnt+3) == 1
-                mod(i) = -1-j;
-            elseif data(cnt) == 0 && data(cnt+1) == 0 && data(cnt+2) == 1 && data(cnt+3) == 0
-                mod(i) = -1-3j;
-            elseif data(cnt) == 0 && data(cnt+1) == 0 && data(cnt+2) == 0 && data(cnt+3) == 1
-                mod(i) = -3-j;
-            elseif data(cnt) == 0 && data(cnt+1) == 0 && data(cnt+2) == 0 && data(cnt+3) == 0
-                mod(i) = -3-3j;
-            end
+            pos = ismember(QAMBit, data(cnt:cnt+3), "rows");
+            mod(i) = QAM(find(pos));
             cnt = cnt + 4;
-        end            
+        end
         mod = mod*scale;
     end
 end
-
 
 function demod = demodulation(mod_order, s)
     len = length(s)/mod_order;
@@ -203,33 +174,33 @@ function demod = demodulation(mod_order, s)
             if real(s(i)) >= 2 && imag(s(i)) > 2
                 demod(cnt) = 1; demod(cnt+1) = 1; demod(cnt+2) = 1; demod(cnt+3) = 1;
             elseif real(s(i)) >= 2 && imag(s(i)) > 0 && imag(s(i)) < 2
-                demod(cnt) = 1; demod(cnt+1) = 1; demod(cnt+2) = 1; demod(cnt+3) = 0;    
+                demod(cnt) = 1; demod(cnt+1) = 1; demod(cnt+2) = 1; demod(cnt+3) = 0;
             elseif real(s(i)) >= 0 && real (s(i)) < 2 && imag(s(i)) > 2
-                demod(cnt) = 1; demod(cnt+1) = 1; demod(cnt+2) = 0; demod(cnt+3) = 1;    
+                demod(cnt) = 1; demod(cnt+1) = 1; demod(cnt+2) = 0; demod(cnt+3) = 1;
             elseif real(s(i)) >= 0 && real (s(i)) < 2 && imag(s(i)) > 0 && imag(s(i)) < 2
-                demod(cnt) = 1; demod(cnt+1) = 1; demod(cnt+2) = 0; demod(cnt+3) = 0;    
+                demod(cnt) = 1; demod(cnt+1) = 1; demod(cnt+2) = 0; demod(cnt+3) = 0;
             elseif real(s(i)) >= -2 && real(s(i)) < 0 && imag(s(i)) > 2
-                demod(cnt) = 1; demod(cnt+1) = 0; demod(cnt+2) = 1; demod(cnt+3) = 1;    
+                demod(cnt) = 1; demod(cnt+1) = 0; demod(cnt+2) = 1; demod(cnt+3) = 1;
             elseif real(s(i)) < -2 && imag(s(i)) > 2
-                demod(cnt) = 1; demod(cnt+1) = 0; demod(cnt+2) = 1; demod(cnt+3) = 0;    
+                demod(cnt) = 1; demod(cnt+1) = 0; demod(cnt+2) = 1; demod(cnt+3) = 0;
             elseif real(s(i)) < -2 && imag(s(i)) > 0 && imag(s(i)) < 2
-                demod(cnt) = 1; demod(cnt+1) = 0; demod(cnt+2) = 0; demod(cnt+3) = 1;    
+                demod(cnt) = 1; demod(cnt+1) = 0; demod(cnt+2) = 0; demod(cnt+3) = 1;
             elseif real(s(i)) >= -2 && real(s(i)) < 0 && imag(s(i)) > 0 && imag(s(i)) < 2
-                demod(cnt) = 1; demod(cnt+1) = 0; demod(cnt+2) = 0; demod(cnt+3) = 0;    
+                demod(cnt) = 1; demod(cnt+1) = 0; demod(cnt+2) = 0; demod(cnt+3) = 0;
             elseif real(s(i)) >= 2 && imag(s(i)) < 0 && imag(s(i)) > -2
-                demod(cnt) = 0; demod(cnt+1) = 1; demod(cnt+2) = 1; demod(cnt+3) = 1;    
+                demod(cnt) = 0; demod(cnt+1) = 1; demod(cnt+2) = 1; demod(cnt+3) = 1;
             elseif real(s(i)) >= 2 && imag(s(i)) < -2
-                demod(cnt) = 0; demod(cnt+1) = 1; demod(cnt+2) = 1; demod(cnt+3) = 0;    
+                demod(cnt) = 0; demod(cnt+1) = 1; demod(cnt+2) = 1; demod(cnt+3) = 0;
             elseif real(s(i)) >= 0 && real (s(i)) < 2 && imag(s(i)) < 0 && imag(s(i)) > -2
-                demod(cnt) = 0; demod(cnt+1) = 1; demod(cnt+2) = 0; demod(cnt+3) = 1;    
+                demod(cnt) = 0; demod(cnt+1) = 1; demod(cnt+2) = 0; demod(cnt+3) = 1;
             elseif real(s(i)) >= 0 && real (s(i)) < 2 && imag(s(i)) < -2
-                demod(cnt) = 0; demod(cnt+1) = 1; demod(cnt+2) = 0; demod(cnt+3) = 0;    
+                demod(cnt) = 0; demod(cnt+1) = 1; demod(cnt+2) = 0; demod(cnt+3) = 0;
             elseif real(s(i)) >= -2 && real(s(i)) < 0 && imag(s(i)) < 0 && imag(s(i)) > -2
-                demod(cnt) = 0; demod(cnt+1) = 0; demod(cnt+2) = 1; demod(cnt+3) = 1;    
+                demod(cnt) = 0; demod(cnt+1) = 0; demod(cnt+2) = 1; demod(cnt+3) = 1;
             elseif real(s(i)) >= -2 && real(s(i)) < 0 && imag(s(i)) < -2
-                demod(cnt) = 0; demod(cnt+1) = 0; demod(cnt+2) = 1; demod(cnt+3) = 0;    
+                demod(cnt) = 0; demod(cnt+1) = 0; demod(cnt+2) = 1; demod(cnt+3) = 0;
             elseif real(s(i)) < -2 && imag(s(i)) < 0 && imag(s(i)) > -2
-                demod(cnt) = 0; demod(cnt+1) = 0; demod(cnt+2) = 0; demod(cnt+3) = 1;    
+                demod(cnt) = 0; demod(cnt+1) = 0; demod(cnt+2) = 0; demod(cnt+3) = 1;
             elseif real(s(i)) < -2 && imag(s(i)) < -2
                 demod(cnt) = 0; demod(cnt+1) = 0; demod(cnt+2) = 0; demod(cnt+3) = 0;
             end
@@ -237,3 +208,4 @@ function demod = demodulation(mod_order, s)
         end
     end
 end
+
