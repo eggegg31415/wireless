@@ -143,68 +143,40 @@ end
 
 function demod = demodulation(mod_order, s)
     len = length(s)/mod_order;
-    demod = zeros(1, length(s));
+    demod = [];
     if mod_order == 1
         %% BPSK: {1,0} -> {1+0i, -1+0i}
         for i = 1 : len
             if real(s(i)) >= 0 demod(i) = 1;, else demod(i) = 0;, end;
         end
     elseif mod_order == 2
-        %% QPSK: {11,10,01,00} -> {1+i, -1+i, -1-i, 1-i} * scaling factor
-        cnt = 1;
-        for i = 1 : len
-            if real(s(i)) >= 0 && imag(s(i)) >= 0
-                demod(cnt) = 1; demod(cnt+1) = 1;
-            elseif real(s(i)) < 0 && imag(s(i)) >= 0
-                demod(cnt) = 1; demod(cnt+1) = 0;
-            elseif real(s(i)) < 0 && imag(s(i)) < 0
-                demod(cnt) = 0; demod(cnt+1) = 1;
-            elseif real(s(i)) >= 0 && imag(s(i)) < 0
-                demod(cnt) = 0; demod(cnt+1) = 0;
-            end
-            cnt = cnt + 2;
+        %% QPSK: {11,10,01,00} -> {1+i, -1+i, -1-i, 1-i} * scaling factor  
+        QPSK = [1 1; -1 1; -1 -1; 1 -1];
+        QPSKBit = [1 1; 1 0; 0 1; 0 0];        
+        T = [1 2 3; 4 1 2;];
+        TR = triangulation(T, QPSK);
+        for i = 1 : len            
+            [ID,d] = nearestNeighbor(TR, [real(s(i)) imag(s(i))]);
+            demod = [demod QPSKBit(ID, :)];
         end
     elseif mod_order == 4
         %% 16QAM: {1111, 1110, 1101, 1100, 1011, 1010, 1001, 1000, 0111, 0110, 0101, 0100, 0011, 0010, 0001, 0000}
         %% -> {3a+3ai, 3a+ai, a+3ai, a+ai, -a+3ai, -3a+3ai, -3a+ai, -a+ai, 3a-ai, 3a-3ai, a-ai, a-3i, -a-ai, -a-3ai, -3a-ai, -3a-3ai}
-        cnt=1;
         scale = sqrt(4/39);
         s = s/scale;
+        QAM = [3 3; 3 1; 1 3; 1 1;
+            -1 3; -3 3; -3 1; -1 1;
+            3 -1; 3 -3; 1 -1; 1 -3;
+            -1 -1; -1 -3; -3 -1; -3 -3];
+        QAMBit = [1 1 1 1; 1 1 1 0; 1 1 0 1; 1 1 0 0; 
+                1 0 1 1; 1 0 1 0; 1 0 0 1; 1 0 0 0; 
+                0 1 1 1; 0 1 1 0; 0 1 0 1; 0 1 0 0; 
+                0 0 1 1; 0 0 1 0; 0 0 0 1; 0 0 0 0];
+        T = [1 2 3; 4 5 6; 7 8 9; 10 11 12; 13 14 15; 16 1 2;];
+        TR = triangulation(T, QAM);
         for i = 1 : len
-            if real(s(i)) >= 2 && imag(s(i)) > 2
-                demod(cnt) = 1; demod(cnt+1) = 1; demod(cnt+2) = 1; demod(cnt+3) = 1;
-            elseif real(s(i)) >= 2 && imag(s(i)) > 0 && imag(s(i)) < 2
-                demod(cnt) = 1; demod(cnt+1) = 1; demod(cnt+2) = 1; demod(cnt+3) = 0;
-            elseif real(s(i)) >= 0 && real (s(i)) < 2 && imag(s(i)) > 2
-                demod(cnt) = 1; demod(cnt+1) = 1; demod(cnt+2) = 0; demod(cnt+3) = 1;
-            elseif real(s(i)) >= 0 && real (s(i)) < 2 && imag(s(i)) > 0 && imag(s(i)) < 2
-                demod(cnt) = 1; demod(cnt+1) = 1; demod(cnt+2) = 0; demod(cnt+3) = 0;
-            elseif real(s(i)) >= -2 && real(s(i)) < 0 && imag(s(i)) > 2
-                demod(cnt) = 1; demod(cnt+1) = 0; demod(cnt+2) = 1; demod(cnt+3) = 1;
-            elseif real(s(i)) < -2 && imag(s(i)) > 2
-                demod(cnt) = 1; demod(cnt+1) = 0; demod(cnt+2) = 1; demod(cnt+3) = 0;
-            elseif real(s(i)) < -2 && imag(s(i)) > 0 && imag(s(i)) < 2
-                demod(cnt) = 1; demod(cnt+1) = 0; demod(cnt+2) = 0; demod(cnt+3) = 1;
-            elseif real(s(i)) >= -2 && real(s(i)) < 0 && imag(s(i)) > 0 && imag(s(i)) < 2
-                demod(cnt) = 1; demod(cnt+1) = 0; demod(cnt+2) = 0; demod(cnt+3) = 0;
-            elseif real(s(i)) >= 2 && imag(s(i)) < 0 && imag(s(i)) > -2
-                demod(cnt) = 0; demod(cnt+1) = 1; demod(cnt+2) = 1; demod(cnt+3) = 1;
-            elseif real(s(i)) >= 2 && imag(s(i)) < -2
-                demod(cnt) = 0; demod(cnt+1) = 1; demod(cnt+2) = 1; demod(cnt+3) = 0;
-            elseif real(s(i)) >= 0 && real (s(i)) < 2 && imag(s(i)) < 0 && imag(s(i)) > -2
-                demod(cnt) = 0; demod(cnt+1) = 1; demod(cnt+2) = 0; demod(cnt+3) = 1;
-            elseif real(s(i)) >= 0 && real (s(i)) < 2 && imag(s(i)) < -2
-                demod(cnt) = 0; demod(cnt+1) = 1; demod(cnt+2) = 0; demod(cnt+3) = 0;
-            elseif real(s(i)) >= -2 && real(s(i)) < 0 && imag(s(i)) < 0 && imag(s(i)) > -2
-                demod(cnt) = 0; demod(cnt+1) = 0; demod(cnt+2) = 1; demod(cnt+3) = 1;
-            elseif real(s(i)) >= -2 && real(s(i)) < 0 && imag(s(i)) < -2
-                demod(cnt) = 0; demod(cnt+1) = 0; demod(cnt+2) = 1; demod(cnt+3) = 0;
-            elseif real(s(i)) < -2 && imag(s(i)) < 0 && imag(s(i)) > -2
-                demod(cnt) = 0; demod(cnt+1) = 0; demod(cnt+2) = 0; demod(cnt+3) = 1;
-            elseif real(s(i)) < -2 && imag(s(i)) < -2
-                demod(cnt) = 0; demod(cnt+1) = 0; demod(cnt+2) = 0; demod(cnt+3) = 0;
-            end
-            cnt = cnt + 4;
+            [ID,d] = nearestNeighbor(TR, [real(s(i)) imag(s(i))]);
+            demod = [demod QAMBit(ID, :)];
         end
     end
 end
