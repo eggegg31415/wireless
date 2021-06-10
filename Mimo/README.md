@@ -1,6 +1,6 @@
 # I. Introduction
 Emulate data transmission of a 2x2 MIMO environment. Analyze the relationship between BER, SNR, and channel correlation.
-![image](https://github.com/eggegg31415/wireless/blob/master/Mimo/graph/mimo.PNG)
+![image](https://github.com/eggegg31415/wireless/blob/master/Mimo/graph/mimo.png)
 
 # II. Contents
 ## mimo.m
