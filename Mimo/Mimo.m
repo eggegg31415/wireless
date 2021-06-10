@@ -50,17 +50,11 @@ for round = 1:5
     h = (randn(NumStream, NumStream) + randn(NumStream, NumStream) * 1i);
     h = h ./ abs(h);
     
-    % TODO1-channel correlation: cos(theta) = real(dot(h1,h2)) / (norm(h1)*norm(h2))
+    % update theta
     correlation = abs(real(dot(h(:, 1).', h(:, 2)))) / (norm(h(:, 1)) * norm(h(:, 2)));
     theta(round) = rad2deg(acos(correlation));
     
-    % update theta
-%     theta = 0;
-    % TODO2-noise amplification: |H_{i,:}|^2
-    % update amp
     w = inv(h);
-%     amp(1,round) = 0;
-%     amp(2,round) = 0;
     amp(1, round) = norm(abs(w(1, :)))^2;
     amp(2, round) = norm(abs(w(2, :)))^2;
     
@@ -86,34 +80,23 @@ for round = 1:5
         % MIMO: reshape to NumStream streams
         x = reshape(s, NumStream, length(s)/NumStream);
 
-
-        % uncomment it if you want to plot the constellation points
-        % figure('units','normalized','outerposition',[0 0 1 1])
-        % sgtitle(sprintf('Modulation order: %d', mod_order)); 
-
         for d=1:length(dist)
             
             %% transmission with noise
-            % TODO3: generate received signals
             % update Y = HX + N
-%             y = 1;
-            y = h * x * sqrt(Pr(d)) + n(:,1:(500/mod_order));
+            y = h * x * sqrt(Pr(d)) + n(:,1:(Bit_Length/(2*mod_order)));
 
             %% ZF equalization
-            % TODO4: update x_ext = H^-1Y, s_ext = reshape(x_est)
-%             s_est = 1;
             x_est = w * y / sqrt(Pr(d));
-            s_est = reshape(x_est, [1,(1000/mod_order)]);
-            re_x = reshape(x, [1,1000/mod_order]);
+            s_est = reshape(x_est, [1,(Bit_Length/mod_order)]);
+            re_x = reshape(x, [1,Bit_Length/mod_order]);
 
             %% demodulation
-            % TODO: paste your demodulation code here
             tx_predict = demodulation(mod_order, s_est, Bit_Length);
-            tx_predict = reshape(tx_predict, mod_order, (1000/mod_order));
+            tx_predict = reshape(tx_predict, mod_order, (Bit_Length/mod_order));
             tx_predict = tx_predict';
-            tx_predict = reshape(tx_predict, 1, 1000);
+            tx_predict = reshape(tx_predict, 1, Bit_Length);
 
-            % TODO: paste your code for calculating BER here
             error(d,round,mod_order) = 0;
             for i=1:Bit_Length
                 if tx_predict(i) ~= tx_data(i) error(d,round,mod_order) = error(d,round,mod_order)+1;, end;
@@ -126,9 +109,8 @@ for round = 1:5
             noise = s_est - re_x;
             SNR(round,d,mod_order)= 1 / mean( abs(noise.^2) );
             SNRdB_simulated(d,round,mod_order)=10*log10(SNR(round,d,mod_order));
-%             BER_simulated(round,d,mod_order)=0
-%             SNRdB_simulated(round,d,mod_order)=0
 
+            % Uncomment to show the plot of y
             %{
             subplot(2, 2, d)
             hold on;
@@ -148,7 +130,6 @@ for round = 1:5
     end
 end
 
-%% TODO5: analyze how channel correlation impacts ZF in your report
 figure('units','normalized','outerposition',[0 0 1 1])
 hold on;
 bar(dist,SNRdB_simulated(:,:,1));
