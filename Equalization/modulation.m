@@ -123,7 +123,7 @@ function mod = modulation(mod_order, data)
         %% 16QAM: {1111, 1110, 1101, 1100, 1011, 1010, 1001, 1000, 0111, 0110, 0101, 0100, 0011, 0010, 0001, 0000}
         %% -> {3a+3ai, 3a+ai, a+3ai, a+ai, -a+3ai, -3a+3ai, -3a+ai, -a+ai, 3a-ai, 3a-3ai, a-ai, a-3i, -a-ai, -a-3ai, -3a-ai, -3a-3ai}
         cnt=1;
-        scale = sqrt(4/39);
+        scale = 1/sqrt(10);
         QAMBit = [1 1 1 1; 1 1 1 0; 1 1 0 1; 1 1 0 0; 
                 1 0 1 1; 1 0 1 0; 1 0 0 1; 1 0 0 0; 
                 0 1 1 1; 0 1 1 0; 0 1 0 1; 0 1 0 0; 
@@ -162,7 +162,7 @@ function demod = demodulation(mod_order, s)
     elseif mod_order == 4
         %% 16QAM: {1111, 1110, 1101, 1100, 1011, 1010, 1001, 1000, 0111, 0110, 0101, 0100, 0011, 0010, 0001, 0000}
         %% -> {3a+3ai, 3a+ai, a+3ai, a+ai, -a+3ai, -3a+3ai, -3a+ai, -a+ai, 3a-ai, 3a-3ai, a-ai, a-3i, -a-ai, -a-3ai, -3a-ai, -3a-3ai}
-        scale = sqrt(4/39);
+        scale = 1/sqrt(10);
         s = s/scale;
         QAM = [3 3; 3 1; 1 3; 1 1;
             -1 3; -3 3; -3 1; -1 1;
